@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<!--
+  index.html — Ko Jika Tournament entry point (GitHub Pages)
+
+  Flow:
+    - If Facebook in-app browser on iPhone → show warning, do NOT redirect
+    - All other browsers → immediately redirect to GAS via tinyurl, forwarding query params
+
+  URLs to configure (search for CONFIGURE):
+    GAS_TINYURL  : the tinyurl that points to your GAS /exec deployment
+                   used both as redirect target and displayed in the warning card
+
+  Query params are forwarded transparently:
+    ?tournamentId=...   registration deep-link
+    ?kndSRL=...         signup / reset one-time token
+
+  Hosted on GitHub Pages, pointed to by a tinyurl (the "entry" tinyurl).
+  The entry tinyurl is what gets shared on Facebook / in emails.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Ko Jika Tournament</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    /* Shown only while detecting / redirecting */
+    #redirecting {
+      text-align: center;
+      color: #888;
+      font-size: 0.95rem;
+    }
+
+    /* Warning card — hidden until FB+iPhone detected */
+    #warning {
+      display: none;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+      max-width: 420px;
+      width: 100%;
+      padding: 36px 28px;
+      text-align: center;
+    }
+
+    .icon { font-size: 56px; margin-bottom: 16px; }
+
+    h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 12px;
+    }
+
+    p {
+      font-size: 0.95rem;
+      color: #444;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    .steps {
+      background: #f7f9fc;
+      border-radius: 10px;
+      padding: 16px 20px;
+      text-align: left;
+      margin-bottom: 24px;
+    }
+
+    .steps li {
+      font-size: 0.92rem;
+      color: #333;
+      line-height: 1.7;
+      margin-left: 18px;
+    }
+
+    .url-box {
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.82rem;
+      color: #3730a3;
+      word-break: break-all;
+      margin-bottom: 24px;
+      font-family: monospace;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 13px 28px;
+      background: #0041a5;
+      color: #fff;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="redirecting">Opening…</div>
+
+  <div id="warning">
+    <div class="icon">⚠️</div>
+    <h1>Please open this page in Safari</h1>
+    <p>
+      The Ko Jika Tournament registration app does not work correctly
+      inside the Facebook app on iPhone.
+    </p>
+    <div class="steps">
+      <ol>
+        <li>Tap the <strong>three dots …</strong> (top right)</li>
+        <li>Choose <strong>"Open in Safari"</strong></li>
+      </ol>
+    </div>
+    <p>Or copy the link below and paste it in Safari:</p>
+    <div class="url-box" id="display-url"></div>
+    <button class="btn" onclick="copyUrl()">Copy link</button>
+  </div>
+
+  <script>
+    // -------------------------------------------------------------------------
+    // CONFIGURE — replace with your actual GAS tinyurl
+    // This is the tinyurl that points to your GAS /exec deployment.
+    // Example: "https://tinyurl.com/kjk2026gas"
+    // -------------------------------------------------------------------------
+    var GAS_TINYURL = "https://tinyurl.com/32ndSpring";
+    // -------------------------------------------------------------------------
+
+    // Forward any query params from this page's URL onto the GAS tinyurl.
+    // e.g. ?tournamentId=xxx or ?kndSRL=xxx
+    var search = window.location.search; // includes the leading "?" if present
+    var gasUrl = GAS_TINYURL + search;
+
+    // Facebook in-app browser on iPhone detection:
+    // requires BOTH "iPhone" AND ("FBAN" or "FBAV") in the user agent.
+    var ua = navigator.userAgent || "";
+    var isFacebookIphone = /iPhone/i.test(ua) && (/FBAN/i.test(ua) || /FBAV/i.test(ua));
+
+    if (isFacebookIphone) {
+      // Show warning card; do NOT redirect.
+      document.getElementById("redirecting").style.display = "none";
+      document.getElementById("warning").style.display = "block";
+      // Show the GAS URL (without query params — user should open the app fresh in Safari)
+      document.getElementById("display-url").textContent = GAS_TINYURL;
+    } else {
+      // All other browsers: redirect immediately, forwarding query params.
+      window.location.replace(gasUrl);
+    }
+
+    function copyUrl() {
+      var url = document.getElementById("display-url").textContent.trim();
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function () {
+          document.querySelector(".btn").textContent = "✓ Copied!";
+        });
+      } else {
+        var ta = document.createElement("textarea");
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        document.querySelector(".btn").textContent = "✓ Copied!";
+      }
+    }
+  </script>
+
+</body>
+</html>
