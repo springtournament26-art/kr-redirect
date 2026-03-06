@@ -1,186 +1,292 @@
 <!DOCTYPE html>
-<!--
-  index.html — Ko Jika Tournament entry point (GitHub Pages)
-
-  Flow:
-    - If Facebook in-app browser on iPhone → show warning, do NOT redirect
-    - All other browsers → immediately redirect to GAS via tinyurl, forwarding query params
-
-  URLs to configure (search for CONFIGURE):
-    GAS_TINYURL  : the tinyurl that points to your GAS /exec deployment
-                   used both as redirect target and displayed in the warning card
-
-  Query params are forwarded transparently:
-    ?tournamentId=...   registration deep-link
-    ?kndSRL=...         signup / reset one-time token
-
-  Hosted on GitHub Pages, pointed to by a tinyurl (the "entry" tinyurl).
-  The entry tinyurl is what gets shared on Facebook / in emails.
--->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Ko Jika Tournament</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Ko Jika Tournament Registration</title>
+  
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f0f4f8;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0041a5 0%, #0055c8 100%);
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      padding: 24px;
+      padding: 20px;
     }
-
-    /* Shown only while detecting / redirecting */
-    #redirecting {
-      text-align: center;
-      color: #888;
-      font-size: 0.95rem;
-    }
-
-    /* Warning card — hidden until FB+iPhone detected */
-    #warning {
-      display: none;
-      background: #fff;
+    
+    .container {
+      background: white;
       border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.12);
-      max-width: 420px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      max-width: 600px;
       width: 100%;
-      padding: 36px 28px;
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #0041a5 0%, #0055c8 100%);
+      color: white;
+      padding: 30px;
       text-align: center;
     }
-
-    .icon { font-size: 56px; margin-bottom: 16px; }
-
-    h1 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: #1a1a2e;
-      margin-bottom: 12px;
+    
+    .header h1 {
+      font-size: 1.8em;
+      margin-bottom: 10px;
     }
-
-    p {
-      font-size: 0.95rem;
-      color: #444;
-      line-height: 1.6;
-      margin-bottom: 20px;
+    
+    .header p {
+      font-size: 1.1em;
+      opacity: 0.95;
     }
-
-    .steps {
-      background: #f7f9fc;
-      border-radius: 10px;
-      padding: 16px 20px;
-      text-align: left;
-      margin-bottom: 24px;
+    
+    .content {
+      padding: 40px 30px;
     }
-
-    .steps li {
-      font-size: 0.92rem;
+    
+    .warning-box {
+      background: #fff3cd;
+      border-left: 4px solid #ff9800;
+      padding: 20px;
+      margin-bottom: 30px;
+      border-radius: 4px;
+    }
+    
+    .warning-box h2 {
+      color: #856404;
+      font-size: 1.4em;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .warning-icon {
+      font-size: 1.5em;
+    }
+    
+    .instructions {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+    }
+    
+    .instructions h3 {
+      color: #0041a5;
+      margin-bottom: 15px;
+      font-size: 1.2em;
+    }
+    
+    .instructions ol {
+      margin-left: 20px;
+      line-height: 1.8;
+    }
+    
+    .instructions li {
+      margin-bottom: 10px;
       color: #333;
-      line-height: 1.7;
-      margin-left: 18px;
     }
-
-    .url-box {
-      background: #eef2ff;
-      border: 1px solid #c7d2fe;
-      border-radius: 8px;
-      padding: 12px 16px;
-      font-size: 0.82rem;
-      color: #3730a3;
-      word-break: break-all;
-      margin-bottom: 24px;
-      font-family: monospace;
+    
+    .instructions strong {
+      color: #0041a5;
     }
-
-    .btn {
-      display: inline-block;
-      padding: 13px 28px;
-      background: #0041a5;
-      color: #fff;
+    
+    .copy-section {
+      background: #e3f2fd;
+      padding: 15px;
       border-radius: 8px;
-      font-size: 1rem;
-      font-weight: 600;
-      text-decoration: none;
-      cursor: pointer;
-      border: none;
+      margin-bottom: 25px;
+    }
+    
+    .copy-section p {
+      margin-bottom: 10px;
+      color: #555;
+      font-size: 0.95em;
+    }
+    
+    .url-input {
       width: 100%;
+      padding: 12px;
+      border: 2px solid #0041a5;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.9em;
+      background: white;
+      cursor: pointer;
+    }
+    
+    .url-input:focus {
+      outline: none;
+      border-color: #0055c8;
+      box-shadow: 0 0 0 3px rgba(0, 65, 165, 0.1);
+    }
+    
+    .continue-button {
+      display: block;
+      width: 100%;
+      padding: 15px 30px;
+      background: linear-gradient(135deg, #0041a5 0%, #0055c8 100%);
+      color: white;
+      text-decoration: none;
+      text-align: center;
+      border-radius: 8px;
+      font-size: 1.1em;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0, 65, 165, 0.3);
+    }
+    
+    .continue-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 65, 165, 0.4);
+    }
+    
+    .continue-button:active {
+      transform: translateY(0);
+    }
+    
+    .desktop-message {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 20px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    
+    .desktop-message p {
+      color: #2e7d32;
+      margin-bottom: 15px;
+    }
+    
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-size: 0.9em;
+      border-top: 1px solid #eee;
+    }
+    
+    .footer a {
+      color: #0041a5;
+      text-decoration: none;
+    }
+    
+    .footer a:hover {
+      text-decoration: underline;
+    }
+    
+    @media (max-width: 480px) {
+      .header h1 {
+        font-size: 1.5em;
+      }
+      
+      .content {
+        padding: 30px 20px;
+      }
+      
+      .instructions ol {
+        margin-left: 15px;
+        font-size: 0.95em;
+      }
     }
   </style>
 </head>
 <body>
-
-  <div id="redirecting">Opening…</div>
-
-  <div id="warning">
-    <div class="icon">⚠️</div>
-    <h1>Please open this page in Safari</h1>
-    <p>
-      The Ko Jika Tournament registration app does not work correctly
-      inside the Facebook app on iPhone.
-    </p>
-    <div class="steps">
-      <ol>
-        <li>Tap the <strong>three dots …</strong> (top right)</li>
-        <li>Choose <strong>"Open in Safari"</strong></li>
-      </ol>
+  <div class="container">
+    <div class="header">
+      <h1>Ko Jika Tournament</h1>
+      <p>Registration Form</p>
     </div>
-    <p>Or copy the link below and paste it in Safari:</p>
-    <div class="url-box" id="display-url"></div>
-    <button class="btn" onclick="copyUrl()">Copy link</button>
+    
+    <div class="content" id="content">
+      <!-- Content will be inserted by JavaScript -->
+    </div>
+    
+    <div class="footer">
+      <p>For questions, visit <a href="https://www.kojika.be" target="_blank">www.kojika.be</a></p>
+    </div>
   </div>
 
   <script>
-    // -------------------------------------------------------------------------
-    // CONFIGURE — replace with your actual GAS tinyurl
-    // This is the tinyurl that points to your GAS /exec deployment.
-    // Example: "https://tinyurl.com/kjk2026gas"
-    // -------------------------------------------------------------------------
-    var GAS_TINYURL = "https://tinyurl.com/32ndSpring";
-    // -------------------------------------------------------------------------
-
-    // Forward any query params from this page's URL onto the GAS tinyurl.
-    // e.g. ?tournamentId=xxx or ?kndSRL=xxx
-    var search = window.location.search; // includes the leading "?" if present
-    var gasUrl = GAS_TINYURL + search;
-
-    // Facebook in-app browser on iPhone detection:
-    // requires BOTH "iPhone" AND ("FBAN" or "FBAV") in the user agent.
-    var ua = navigator.userAgent || "";
-    var isFacebookIphone = /iPhone/i.test(ua) && (/FBAN/i.test(ua) || /FBAV/i.test(ua));
-
-    if (isFacebookIphone) {
-      // Show warning card; do NOT redirect.
-      document.getElementById("redirecting").style.display = "none";
-      document.getElementById("warning").style.display = "block";
-      // Show the GAS URL (without query params — user should open the app fresh in Safari)
-      document.getElementById("display-url").textContent = GAS_TINYURL;
+    // IMPORTANT: Replace this URL with your actual Google Apps Script web app URL
+    const GAS_URL = 'https://tinyurl.com/32ndspring';
+    
+    // Detect browser and device
+    var ua = navigator.userAgent || navigator.vendor || window.opera;
+    var isFacebookApp = (ua.indexOf("FBAN") > -1) || (ua.indexOf("FBAV") > -1) || (ua.indexOf("FB_IAB") > -1);
+    var isIOS = /iPhone|iPad|iPod/.test(ua);
+    var isAndroid = /Android/.test(ua);
+    
+    var contentDiv = document.getElementById('content');
+    
+    if (isFacebookApp && isIOS) {
+      // Facebook in-app browser on iOS - Show instructions
+      contentDiv.innerHTML = `
+        <div class="warning-box">
+          <h2><span class="warning-icon">⚠️</span> iPhone Users</h2>
+          <p>The registration form won't work in Facebook's browser. Please follow these steps to open it in Safari:</p>
+        </div>
+        
+        <div class="instructions">
+          <h3>How to Open in Safari:</h3>
+          <ol>
+            <li>Look at the <strong>bottom right</strong> of your screen</li>
+            <li>Tap the <strong>three dots (•••)</strong> icon</li>
+            <li>Select <strong>"Open in Safari"</strong> or <strong>"Open in Browser"</strong></li>
+          </ol>
+        </div>
+        
+        <div class="copy-section">
+          <p><strong>Alternative:</strong> Copy this link and paste it in Safari:</p>
+          <input 
+            type="text" 
+            class="url-input" 
+            value="${GAS_URL}" 
+            readonly 
+            onclick="this.select(); document.execCommand('copy'); alert('Link copied! Now open Safari and paste it.');"
+          >
+        </div>
+      `;
+      
+    } else if (isFacebookApp && isAndroid) {
+      // Facebook in-app browser on Android - Usually works, but offer external option
+      contentDiv.innerHTML = `
+        <div class="desktop-message">
+          <p><strong>Redirecting you to the registration form...</strong></p>
+          <p>If the page doesn't load, tap the three dots and select "Open in external browser".</p>
+        </div>
+        <a href="${GAS_URL}" class="continue-button">Continue to Registration</a>
+      `;
+      
+      // Auto-redirect after 2 seconds
+      setTimeout(function() {
+        window.location.href = GAS_URL;
+      }, 2000);
+      
     } else {
-      // All other browsers: redirect immediately, forwarding query params.
-      window.location.replace(gasUrl);
-    }
-
-    function copyUrl() {
-      var url = document.getElementById("display-url").textContent.trim();
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(url).then(function () {
-          document.querySelector(".btn").textContent = "✓ Copied!";
-        });
-      } else {
-        var ta = document.createElement("textarea");
-        ta.value = url;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        document.querySelector(".btn").textContent = "✓ Copied!";
-      }
+      // Normal browser - redirect immediately
+      contentDiv.innerHTML = `
+        <div class="desktop-message">
+          <p><strong>Redirecting you to the registration form...</strong></p>
+        </div>
+        <a href="${GAS_URL}" class="continue-button">Continue to Registration</a>
+      `;
+      
+      // Auto-redirect immediately
+      setTimeout(function() {
+        window.location.href = GAS_URL;
+      }, 500);
     }
   </script>
-
 </body>
 </html>
